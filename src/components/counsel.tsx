@@ -382,6 +382,7 @@ export function CounselProvider({
           <WebResultsRail
             sources={liveWeb}
             searching={busy && web && liveWeb.length === 0}
+            active={turns.length > 0}
           />
 
           <aside

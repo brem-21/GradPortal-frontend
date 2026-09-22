@@ -4,6 +4,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import type { ActionState } from "@/lib/action-state";
 import { ApiError, api, apiFetch } from "@/lib/api";
+import type { NewsItem } from "@/types/api";
 
 function fail(error: unknown): ActionState {
   if (error instanceof ApiError) return { ok: false, message: error.message };
@@ -507,4 +508,22 @@ export async function deactivateAccountAction(): Promise<ActionState> {
   }
   revalidatePath("/", "layout");
   return { ok: true, message: "Account deactivated." };
+}
+
+/**
+ * Immigration headlines for the Counsel rail.
+ *
+ * Counsel is a client component and the API client holds the session token, so
+ * the rail reaches the backend through here. Failures return an empty list: the
+ * rail is ambient context, and a dead feed should never surface an error over
+ * the advisor.
+ */
+export async function fetchImmigrationNewsAction(): Promise<NewsItem[]> {
+  try {
+    const feed = await api.immigrationNews();
+    return feed.items;
+  } catch (error) {
+    console.error("[action] immigration news", error);
+    return [];
+  }
 }

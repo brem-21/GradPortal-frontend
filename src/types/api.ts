@@ -343,3 +343,15 @@ export interface Connections {
   can_send_email_as_self: boolean;
   sending_provider: string | null;
 }
+
+/** A live immigration headline shown in the Counsel rail before a search. */
+export type NewsItem = {
+  title: string;
+  url: string;
+  summary: string | null;
+  source: string;
+  region: string;
+  published_at: string | null;
+};
+
+export type NewsFeed = { items: NewsItem[] };

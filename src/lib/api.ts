@@ -8,6 +8,7 @@ import type {
   MediaAsset,
   MentorCard,
   MentorshipRequest,
+  NewsFeed,
   Notification,
   Opportunity,
   OutreachDraft,
@@ -169,6 +170,11 @@ export const api = {
     apiFetch<OutreachEmail>("/outreach/send", { method: "POST", body }),
 
   outreach: (query?: Query) => apiFetch<Page<OutreachEmail>>("/outreach", { query }),
+
+  // Immigration headlines for the Counsel rail. Cached server-side for the
+  // same half hour the backend caches them, so opening Counsel is not a fetch.
+  immigrationNews: () =>
+    apiFetch<NewsFeed>("/news/immigration", { query: { limit: 12 }, revalidate: 1800 }),
 
   notifications: (query?: Query) =>
     apiFetch<Page<Notification>>("/notifications", { query }),
