@@ -1,15 +1,20 @@
 import { ai, serviceHealth } from "@/lib/ai-api";
 import { ApiError } from "@/lib/api";
 import { DocumentRow } from "./document-row";
-import { Uploader } from "./uploader";
+import { UploadButton } from "@/components/upload-dialog";
 import { Banner, EmptyState, Hairline, PillLink, SectionLabel, StatTile } from "@/components/ui";
 import { kindLabel } from "@/lib/document-kinds";
 import type { DocumentList, DocumentStats } from "@/types/ai";
 
-export const metadata = { title: "Documents — GradPortal" };
+export const metadata = { title: "Dossier — GradPortal" };
 export const dynamic = "force-dynamic";
 
-export default async function DocumentsPage() {
+export default async function DossierPage() {
+  // Drive needs a browser-visible client id and API key; without them the
+  // option renders disabled rather than dead.
+  const driveConfigured = Boolean(
+    process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && process.env.NEXT_PUBLIC_GOOGLE_API_KEY,
+  );
   const health = await serviceHealth();
   const docHealth = health.doc;
 
@@ -28,12 +33,17 @@ export default async function DocumentsPage() {
   return (
     <div className="py-12">
       <SectionLabel>Your application file</SectionLabel>
-      <h1 className="heading-lg mb-4">Documents</h1>
-      <p className="prose-column mb-10 text-[15px] text-pewter">
-        Upload your CV, statement of purpose, motivation letter, recommendations and
-        transcripts. They are indexed so the assistant can answer from them, and they
-        are what the admissions reviewer reads.
-      </p>
+      <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
+        <div>
+          <h1 className="heading-lg mb-3">Dossier</h1>
+          <p className="prose-column text-[15px] text-pewter">
+            Your CV, statement of purpose, motivation letter, recommendations and
+            transcripts. Counsel answers from these, and this is what the Committee
+            reads.
+          </p>
+        </div>
+        <UploadButton driveConfigured={driveConfigured} />
+      </div>
 
       {docHealth === null ? (
         <div className="mb-8">
@@ -49,7 +59,7 @@ export default async function DocumentsPage() {
         <div className="mb-8">
           <Banner tone="warning">
             <strong>OPENAI_API_KEY is not set.</strong> Uploads will parse but cannot be
-            indexed, so the assistant will not be able to search them. OpenRouter has no
+            indexed, so Counsel will not be able to search them. OpenRouter has no
             embeddings endpoint, which is why this key is separate. Add it to{" "}
             <code className="text-[12px]">services/.env</code> and restart doc-service.
           </Banner>
@@ -68,7 +78,7 @@ export default async function DocumentsPage() {
           <StatTile
             label="Words indexed"
             value={stats.total_words.toLocaleString()}
-            hint="Searchable by the assistant"
+            hint="Searchable by Counsel"
           />
           <StatTile
             label="Types covered"
@@ -82,8 +92,6 @@ export default async function DocumentsPage() {
         </div>
       ) : null}
 
-      <Uploader />
-
       <section>
         <SectionLabel>Uploaded</SectionLabel>
         <h2 className="heading mb-6">Your documents</h2>
@@ -91,8 +99,8 @@ export default async function DocumentsPage() {
         {documents.items.length === 0 ? (
           <EmptyState
             title="Nothing uploaded yet"
-            body="Start with your CV and your statement of purpose — those two carry most of the weight in a committee's reading, and they are what the reviewer has most to say about."
-            action={<PillLink href="/evaluate">See what gets assessed</PillLink>}
+            body="Start with your CV and your statement of purpose — those two carry most of the weight in a committee's reading."
+            action={<UploadButton driveConfigured={driveConfigured} />}
           />
         ) : (
           <ul>

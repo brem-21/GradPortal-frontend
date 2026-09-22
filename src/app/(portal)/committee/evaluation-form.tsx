@@ -33,7 +33,7 @@ export function EvaluationForm({ documents }: { documents: AppDocument[] }) {
 
   useEffect(() => {
     if (result.ok && result.runId) {
-      router.push(`/evaluate/${result.runId}`);
+      router.push(`/committee/${result.runId}`);
     }
   }, [result, router]);
 

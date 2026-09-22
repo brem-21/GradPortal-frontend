@@ -150,7 +150,7 @@ export const api = {
   reviewQueue: (query?: Query) =>
     apiFetch<Page<Opportunity>>("/admin/opportunities/review-queue", { query }),
 
-  saved: (query?: Query) => apiFetch<Page<SavedOpportunity>>("/saved", { query }),
+  saved: (query?: Query) => apiFetch<Page<SavedOpportunity>>("/shortlist", { query }),
 
   save: (id: string, body: unknown) =>
     apiFetch<SavedOpportunity>(`/opportunities/${id}/save`, { method: "PUT", body }),

@@ -3,7 +3,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import type { ActionState } from "@/lib/action-state";
-import { ApiError, api } from "@/lib/api";
+import { ApiError, api, apiFetch } from "@/lib/api";
 
 function fail(error: unknown): ActionState {
   if (error instanceof ApiError) return { ok: false, message: error.message };
@@ -146,7 +146,7 @@ export async function saveOpportunityAction(
   }
   revalidatePath(`/opportunities/${opportunityId}`);
   revalidatePath("/opportunities");
-  revalidatePath("/saved");
+  revalidatePath("/shortlist");
   revalidatePath("/overview");
   return { ok: true, message: "Saved." };
 }
@@ -159,7 +159,7 @@ export async function unsaveOpportunityAction(opportunityId: string): Promise<Ac
   }
   revalidatePath(`/opportunities/${opportunityId}`);
   revalidatePath("/opportunities");
-  revalidatePath("/saved");
+  revalidatePath("/shortlist");
   revalidatePath("/overview");
   return { ok: true, message: "Removed." };
 }
@@ -495,4 +495,16 @@ export async function deleteStoryAction(id: string): Promise<ActionState> {
   }
   refreshSiteContent();
   return { ok: true, message: "Story deleted." };
+}
+
+/* ---------------- Account ---------------- */
+
+export async function deactivateAccountAction(): Promise<ActionState> {
+  try {
+    await apiFetch<{ detail: string }>("/users/me", { method: "DELETE" });
+  } catch (error) {
+    return fail(error);
+  }
+  revalidatePath("/", "layout");
+  return { ok: true, message: "Account deactivated." };
 }

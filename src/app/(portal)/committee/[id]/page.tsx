@@ -10,7 +10,7 @@ import type { Finding, Severity } from "@/types/ai";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Review — GradPortal" };
+export const metadata = { title: "Committee review — GradPortal" };
 
 const SEVERITY_ORDER: Record<Severity, number> = {
   critical: 0,
@@ -95,7 +95,7 @@ export default async function EvaluationDetailPage({
   return (
     <div className="py-12">
       <Link
-        href="/evaluate"
+        href="/committee"
         className="mb-8 inline-block text-[13px] text-smoke transition-colors hover:text-ink"
       >
         ← All reviews
@@ -113,7 +113,7 @@ export default async function EvaluationDetailPage({
             : "Review"}
         </h1>
         {run.overall_score !== null ? (
-          <div className="w-[220px]">
+          <div className="w-[240px]">
             <p className="text-right text-[62px] font-light leading-none tracking-[-1.55px] text-ink">
               {Math.round(run.overall_score)}
               <span className="text-[18px] text-smoke">/100</span>
@@ -121,6 +121,13 @@ export default async function EvaluationDetailPage({
             <div className="mt-3">
               <ScoreMeter value={run.overall_score} />
             </div>
+            {/* The score rates the documents submitted; the verdict rates the
+                file as a whole. A strong CV in an incomplete file scores well
+                and is still not ready, which looks contradictory unless said. */}
+            <p className="mt-2 text-right text-[11px] leading-relaxed text-smoke">
+              Average quality of the documents you submitted. The verdict above
+              also weighs what is missing.
+            </p>
           </div>
         ) : null}
       </div>
@@ -251,8 +258,8 @@ export default async function EvaluationDetailPage({
       </section>
 
       <div className="mt-14 flex flex-wrap items-center gap-6">
-        <TextArrowLink href="/evaluate">Run another review</TextArrowLink>
-        <TextArrowLink href="/assistant">Ask the assistant about this</TextArrowLink>
+        <TextArrowLink href="/committee">Run another review</TextArrowLink>
+        
       </div>
 
       {run.model ? (

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { deleteMediaAction, updateMediaAction } from "@/lib/actions";
+import { useConfirm } from "@/components/confirm-dialog";
 import { GhostButton, SectionLabel, Tag, cx } from "@/components/ui";
 import type { MediaAsset, SlotOption } from "@/types/api";
 
@@ -215,7 +216,7 @@ export function MediaGrid({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [confirming, setConfirming] = useState<string | null>(null);
+  const confirm = useConfirm();
 
   function run(fn: () => Promise<{ ok: boolean; message: string | null }>) {
     setError(null);
@@ -311,34 +312,22 @@ export function MediaGrid({
                 >
                   {asset.enabled ? "Hide" : "Show"}
                 </GhostButton>
-                {confirming === asset.id ? (
-                  <>
-                    <GhostButton
-                      type="button"
-                      disabled={pending}
-                      onClick={() => run(() => deleteMediaAction(asset.id))}
-                      className="text-ember"
-                    >
-                      Confirm delete
-                    </GhostButton>
-                    <GhostButton
-                      type="button"
-                      onClick={() => setConfirming(null)}
-                      className="text-smoke"
-                    >
-                      Cancel
-                    </GhostButton>
-                  </>
-                ) : (
-                  <GhostButton
-                    type="button"
-                    disabled={pending}
-                    onClick={() => setConfirming(asset.id)}
-                    className="text-smoke"
-                  >
-                    Delete
-                  </GhostButton>
-                )}
+                <GhostButton
+                  type="button"
+                  disabled={pending}
+                  onClick={async () => {
+                    const confirmed = await confirm({
+                      title: "Delete this media?",
+                      body: `"${asset.title ?? asset.filename}" is removed from ${asset.slots.length || "no"} slot(s) and deleted from disk. Any slot left empty falls back to the bundled photographs.`,
+                      confirmLabel: "Delete",
+                      tone: "danger",
+                    });
+                    if (confirmed) run(() => deleteMediaAction(asset.id));
+                  }}
+                  className="text-smoke"
+                >
+                  Delete
+                </GhostButton>
               </div>
             </div>
           </li>

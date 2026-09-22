@@ -4,15 +4,15 @@ import type { NextRequest } from "next/server";
 const PROTECTED = [
   "/overview",
   "/opportunities",
-  "/saved",
+  "/shortlist",
   "/mentors",
   "/mentorship",
   "/profile",
   "/notifications",
   "/submit",
   "/onboarding",
-  "/documents",
-  "/evaluate",
+  "/dossier",
+  "/committee",
   "/assistant",
   "/admin",
 ];

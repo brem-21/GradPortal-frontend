@@ -95,7 +95,7 @@ export default async function OverviewPage() {
             <SectionLabel>Ranked for you</SectionLabel>
             <h2 className="heading">Best matches</h2>
           </div>
-          <TextArrowLink href="/opportunities">See all opportunities</TextArrowLink>
+          <TextArrowLink href="/opportunities">See all openings</TextArrowLink>
         </div>
 
         {noPreferences ? (

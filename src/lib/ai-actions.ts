@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import type { ActionState } from "@/lib/action-state";
-import { ai } from "@/lib/ai-api";
+import { ai, serviceFetch } from "@/lib/ai-api";
 import { ApiError } from "@/lib/api";
 
 function fail(error: unknown): ActionState {
@@ -19,8 +19,8 @@ export async function deleteDocumentAction(id: string): Promise<ActionState> {
   } catch (error) {
     return fail(error);
   }
-  revalidatePath("/documents");
-  revalidatePath("/evaluate");
+  revalidatePath("/dossier");
+  revalidatePath("/committee");
   return { ok: true, message: "Document removed." };
 }
 
@@ -30,7 +30,7 @@ export async function reindexDocumentAction(id: string): Promise<ActionState> {
   } catch (error) {
     return fail(error);
   }
-  revalidatePath("/documents");
+  revalidatePath("/dossier");
   return { ok: true, message: "Re-indexed." };
 }
 
@@ -43,8 +43,8 @@ export async function retypeDocumentAction(
   } catch (error) {
     return fail(error);
   }
-  revalidatePath("/documents");
-  revalidatePath("/evaluate");
+  revalidatePath("/dossier");
+  revalidatePath("/committee");
   return { ok: true, message: "Type updated." };
 }
 
@@ -70,7 +70,7 @@ export async function startEvaluationAction(
       target_field: targetField,
       target_programs: targetPrograms,
     });
-    revalidatePath("/evaluate");
+    revalidatePath("/committee");
     if (run.status === "failed") {
       return { ok: false, message: run.error ?? "The review could not be completed." };
     }
@@ -86,7 +86,7 @@ export async function deleteEvaluationAction(id: string): Promise<ActionState> {
   } catch (error) {
     return fail(error);
   }
-  revalidatePath("/evaluate");
+  revalidatePath("/committee");
   return { ok: true, message: "Evaluation deleted." };
 }
 
@@ -104,8 +104,10 @@ export interface ChatActionResult extends ActionState {
     excerpt: string;
     score: number;
   }[];
+  webSources?: { title: string; url: string }[];
   searchQueries?: string[];
   grounded?: boolean;
+  usedWeb?: boolean;
   reasoning?: string | null;
   model?: string | null;
   latencyMs?: number | null;
@@ -116,6 +118,8 @@ export async function sendChatAction(input: {
   conversationId?: string | null;
   reasoning: boolean;
   voice: boolean;
+  web?: boolean;
+  opportunity?: Record<string, unknown>;
 }): Promise<ChatActionResult> {
   const message = input.message.trim();
   if (!message) return { ok: false, message: "Type or say something first." };
@@ -126,9 +130,12 @@ export async function sendChatAction(input: {
       conversation_id: input.conversationId ?? null,
       reasoning: input.reasoning,
       voice: input.voice,
+      web: input.web ?? false,
       input_mode: input.voice ? "voice" : "text",
+      opportunity_id: (input.opportunity?.id as string | undefined) ?? null,
+      opportunity: input.opportunity ?? null,
     });
-    revalidatePath("/assistant");
+    revalidatePath("/overview");
     const assistant = response.assistant_message;
     return {
       ok: true,
@@ -144,8 +151,13 @@ export async function sendChatAction(input: {
         excerpt: citation.excerpt,
         score: citation.score,
       })),
+      webSources: (assistant.web_sources ?? []).map((source) => ({
+        title: source.title,
+        url: source.url,
+      })),
       searchQueries: assistant.search_queries,
       grounded: assistant.grounded,
+      usedWeb: assistant.used_web,
       reasoning: assistant.reasoning,
       model: assistant.model,
       latencyMs: assistant.latency_ms,
@@ -161,6 +173,50 @@ export async function deleteConversationAction(id: string): Promise<ActionState>
   } catch (error) {
     return fail(error);
   }
-  revalidatePath("/assistant");
+  revalidatePath("/overview");
   return { ok: true, message: "Conversation deleted." };
+}
+
+/* ---------------- Outreach: AI refinement ---------------- */
+
+export interface RefineResult extends ActionState {
+  subject?: string;
+  body?: string;
+  changes?: string[];
+  warnings?: string[];
+}
+
+export async function refineEmailAction(input: {
+  subject: string;
+  body: string;
+  contactName?: string | null;
+  opportunity?: Record<string, unknown> | null;
+}): Promise<RefineResult> {
+  try {
+    const result = await serviceFetch<{
+      subject: string;
+      body: string;
+      changes: string[];
+      warnings: string[];
+    }>("rag", "/compose/refine-email", {
+      method: "POST",
+      body: {
+        subject: input.subject,
+        body: input.body,
+        contact_name: input.contactName ?? null,
+        opportunity: input.opportunity ?? null,
+        ground_in_documents: true,
+      },
+    });
+    return {
+      ok: true,
+      message: null,
+      subject: result.subject,
+      body: result.body,
+      changes: result.changes,
+      warnings: result.warnings,
+    };
+  } catch (error) {
+    return fail(error);
+  }
 }

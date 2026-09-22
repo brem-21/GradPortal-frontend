@@ -5,6 +5,7 @@ import { useActionState, useRef, useState, useTransition } from "react";
 import { IDLE } from "@/lib/action-state";
 import { createStoryAction, deleteStoryAction, updateStoryAction } from "@/lib/actions";
 import { Field, FormMessage, Select, SubmitButton, TextArea, TextInput, Toggle } from "@/components/form";
+import { useConfirm } from "@/components/confirm-dialog";
 import { GhostButton, Hairline, SectionLabel, Tag, cx } from "@/components/ui";
 import { FIELD_OPTIONS } from "@/lib/options";
 import type { AdminStory } from "@/types/api";
@@ -193,7 +194,7 @@ export function StoryList({ stories }: { stories: AdminStory[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [confirming, setConfirming] = useState<string | null>(null);
+  const confirm = useConfirm();
 
   function run(fn: () => Promise<{ ok: boolean; message: string | null }>) {
     setError(null);
@@ -273,41 +274,37 @@ export function StoryList({ stories }: { stories: AdminStory[] }) {
                 <GhostButton
                   type="button"
                   disabled={pending || (!story.consent_confirmed && !story.published)}
-                  onClick={() =>
-                    run(() => updateStoryAction(story.id, { published: !story.published }))
-                  }
+                  onClick={async () => {
+                    if (!story.published) {
+                      const confirmed = await confirm({
+                        title: `Publish ${story.name}'s story?`,
+                        body: "It becomes visible to everyone on the public landing page, including signed-out visitors. Confirm you have their permission to be named and quoted.",
+                        confirmLabel: "Publish",
+                      });
+                      if (!confirmed) return;
+                    }
+                    run(() => updateStoryAction(story.id, { published: !story.published }));
+                  }}
                   className={cx(!story.consent_confirmed && !story.published && "text-smoke")}
                 >
                   {story.published ? "Unpublish" : "Publish"}
                 </GhostButton>
-                {confirming === story.id ? (
-                  <>
-                    <GhostButton
-                      type="button"
-                      disabled={pending}
-                      onClick={() => run(() => deleteStoryAction(story.id))}
-                      className="text-ember"
-                    >
-                      Confirm delete
-                    </GhostButton>
-                    <GhostButton
-                      type="button"
-                      onClick={() => setConfirming(null)}
-                      className="text-smoke"
-                    >
-                      Cancel
-                    </GhostButton>
-                  </>
-                ) : (
-                  <GhostButton
-                    type="button"
-                    disabled={pending}
-                    onClick={() => setConfirming(story.id)}
-                    className="text-smoke"
-                  >
-                    Delete
-                  </GhostButton>
-                )}
+                <GhostButton
+                  type="button"
+                  disabled={pending}
+                  onClick={async () => {
+                    const confirmed = await confirm({
+                      title: `Delete ${story.name}'s story?`,
+                      body: "The quote and any uploaded photograph are removed permanently. If it is published, it disappears from the landing page immediately.",
+                      confirmLabel: "Delete",
+                      tone: "danger",
+                    });
+                    if (confirmed) run(() => deleteStoryAction(story.id));
+                  }}
+                  className="text-smoke"
+                >
+                  Delete
+                </GhostButton>
               </div>
             </div>
           </li>

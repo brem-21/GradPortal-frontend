@@ -5,7 +5,7 @@ import { OpportunityCard } from "@/components/opportunity-card";
 import { RefreshButton } from "@/components/refresh-button";
 import { EmptyState, Hairline, PillLink, SectionLabel, cx } from "@/components/ui";
 
-export const metadata = { title: "Opportunities — GradPortal" };
+export const metadata = { title: "Openings — GradPortal" };
 
 type Search = Record<string, string | string[] | undefined>;
 
@@ -66,7 +66,7 @@ export default async function OpportunitiesPage({
     <div className="py-12">
       <SectionLabel>Browse</SectionLabel>
       <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
-        <h1 className="heading-lg">Opportunities</h1>
+        <h1 className="heading-lg">Openings</h1>
         <div className="text-right">
           <p className="text-[13px] text-pewter">
             {results.total} open{" "}

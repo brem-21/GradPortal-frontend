@@ -5,7 +5,7 @@ import { EmptyState, Hairline, PillLink, SectionLabel, cx } from "@/components/u
 import { STATUS_LABELS } from "@/lib/format";
 import type { ApplicationStatus } from "@/types/api";
 
-export const metadata = { title: "My list — GradPortal" };
+export const metadata = { title: "Shortlist — GradPortal" };
 export const dynamic = "force-dynamic";
 
 const TABS: (ApplicationStatus | "all")[] = [
@@ -34,7 +34,7 @@ export default async function SavedPage({
     <div className="py-12">
       <SectionLabel>Application tracker</SectionLabel>
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-        <h1 className="heading-lg">My list</h1>
+        <h1 className="heading-lg">Shortlist</h1>
         <p className="text-[13px] text-pewter">
           {results.total} {results.total === 1 ? "entry" : "entries"}
         </p>
@@ -44,7 +44,7 @@ export default async function SavedPage({
         {TABS.map((tab) => (
           <Link
             key={tab}
-            href={tab === "all" ? "/saved" : `/saved?status=${tab}`}
+            href={tab === "all" ? "/shortlist" : `/saved?status=${tab}`}
             className={cx(
               "rounded-pill px-[14px] py-[8px] text-[12px] font-medium leading-none transition-colors duration-200",
               active === tab
@@ -61,7 +61,7 @@ export default async function SavedPage({
         <EmptyState
           title={active === "all" ? "Nothing saved yet" : "Nothing at this stage"}
           body="Save an opportunity from its page and it appears here, where you can move it through saved, applied, interview and offer."
-          action={<PillLink href="/opportunities">Browse opportunities</PillLink>}
+          action={<PillLink href="/opportunities">Browse openings</PillLink>}
         />
       ) : (
         <div>

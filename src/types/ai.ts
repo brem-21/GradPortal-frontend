@@ -118,6 +118,14 @@ export interface Citation {
   score: number;
 }
 
+export interface WebSource {
+  id: string;
+  position: number;
+  title: string;
+  url: string;
+  excerpt: string | null;
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
@@ -130,13 +138,17 @@ export interface ChatMessage {
   model: string | null;
   latency_ms: number | null;
   created_at: string;
+  used_web: boolean;
   citations: Citation[];
+  web_sources: WebSource[];
 }
 
 export interface Conversation {
   id: string;
   title: string;
   document_ids: string[];
+  opportunity_id: string | null;
+  opportunity_title: string | null;
   archived: boolean;
   created_at: string;
   updated_at: string;

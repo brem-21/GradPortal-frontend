@@ -119,7 +119,7 @@ export async function serviceHealth(): Promise<Record<ServiceName, ServiceHealth
 }
 
 export const ai = {
-  documents: () => serviceFetch<DocumentList>("doc", "/documents"),
+  documents: () => serviceFetch<DocumentList>("doc", "/dossier"),
   documentStats: () => serviceFetch<DocumentStats>("doc", "/documents/stats"),
   deleteDocument: (id: string) =>
     serviceFetch<void>("doc", `/documents/${id}`, { method: "DELETE" }),

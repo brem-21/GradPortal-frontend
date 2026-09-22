@@ -215,6 +215,17 @@ body {
   }
 }
 
+@keyframes slide-in-right {
+  from {
+    transform: translate3d(16px, 0, 0);
+    opacity: 0;
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
 @keyframes scrim-in {
   from {
     opacity: 0;
@@ -238,6 +249,10 @@ body {
   animation: scrim-in 320ms ease-out both;
 }
 
+.animate-slide-in-right {
+  animation: slide-in-right 340ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 /* Stagger helpers for the hero. Small, deliberate, never more than a second. */
 .delay-1 { animation-delay: 120ms; }
 .delay-2 { animation-delay: 260ms; }
@@ -250,7 +265,8 @@ body {
   .animate-kenburns,
   .animate-fade-up,
   .animate-fade-in,
-  .animate-scrim-in {
+  .animate-scrim-in,
+  .animate-slide-in-right {
     animation: none !important;
   }
   *,

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ApiError, api } from "@/lib/api";
+import { AskAboutButton } from "@/components/counsel";
 import { EmailComposer } from "./email-composer";
 import { SaveControl } from "./save-control";
 import { Hairline, SectionLabel, Tag, TextArrowLink, cx } from "@/components/ui";
@@ -65,6 +66,21 @@ export default async function OpportunityDetailPage({
     opportunity.days_until_deadline,
   );
 
+  // Handed to both Counsel and the email refiner so neither has to re-fetch.
+  const counselContext = {
+    id: opportunity.id,
+    title: opportunity.title,
+    organization: opportunity.organization,
+    opportunity_type: opportunity.opportunity_type,
+    country: opportunity.country,
+    funding_type: opportunity.funding_type,
+    application_deadline: opportunity.application_deadline,
+    degree_levels: opportunity.degree_levels,
+    fields_of_study: opportunity.fields_of_study,
+    description: opportunity.description?.slice(0, 4000) ?? null,
+    url: opportunity.url,
+  };
+
   const facts: [string, string | null][] = [
     ["Organisation", opportunity.organization],
     ["Department", opportunity.department],
@@ -103,6 +119,13 @@ export default async function OpportunityDetailPage({
         <div className="min-w-0">
           <SectionLabel>{typeLabel(opportunity.opportunity_type)}</SectionLabel>
           <h1 className="heading-lg mb-6">{opportunity.title}</h1>
+
+          <div className="mb-5">
+            <AskAboutButton
+              opportunity={counselContext}
+              label="Should I apply? Ask Counsel"
+            />
+          </div>
 
           <div className="mb-8 flex flex-wrap items-center gap-2">
             {opportunity.fields_of_study.map((field) => (
@@ -227,6 +250,7 @@ export default async function OpportunityDetailPage({
                 contacts={opportunity.contacts}
                 draft={draft}
                 fromEmail={me.email}
+                opportunity={counselContext}
               />
             </section>
           ) : null}

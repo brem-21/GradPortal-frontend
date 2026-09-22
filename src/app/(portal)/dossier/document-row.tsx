@@ -8,6 +8,7 @@ import {
   retypeDocumentAction,
 } from "@/lib/ai-actions";
 import { Select } from "@/components/form";
+import { useConfirm } from "@/components/confirm-dialog";
 import { GhostButton, Tag, cx } from "@/components/ui";
 import { KIND_OPTIONS, formatBytes, kindLabel } from "@/lib/document-kinds";
 import type { AppDocument } from "@/types/ai";
@@ -23,7 +24,7 @@ export function DocumentRow({ document }: { document: AppDocument }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [confirming, setConfirming] = useState(false);
+  const confirm = useConfirm();
 
   const status = STATUS_COPY[document.status] ?? STATUS_COPY.pending;
 
@@ -88,34 +89,22 @@ export function DocumentRow({ document }: { document: AppDocument }) {
                 Retry →
               </GhostButton>
             ) : null}
-            {confirming ? (
-              <>
-                <GhostButton
-                  type="button"
-                  disabled={pending}
-                  onClick={() => run(() => deleteDocumentAction(document.id))}
-                  className="text-ember"
-                >
-                  Confirm delete
-                </GhostButton>
-                <GhostButton
-                  type="button"
-                  onClick={() => setConfirming(false)}
-                  className="text-smoke"
-                >
-                  Cancel
-                </GhostButton>
-              </>
-            ) : (
-              <GhostButton
-                type="button"
-                disabled={pending}
-                onClick={() => setConfirming(true)}
-                className="text-smoke"
-              >
-                Delete
-              </GhostButton>
-            )}
+            <GhostButton
+              type="button"
+              disabled={pending}
+              onClick={async () => {
+                const confirmed = await confirm({
+                  title: "Delete this document?",
+                  body: `"${document.title ?? document.filename}" and its ${document.chunk_count} indexed sections are removed. Counsel will no longer be able to answer from it, and past Committee reviews that cited it stay but cannot be re-run against it.`,
+                  confirmLabel: "Delete",
+                  tone: "danger",
+                });
+                if (confirmed) run(() => deleteDocumentAction(document.id));
+              }}
+              className="text-smoke"
+            >
+              Delete
+            </GhostButton>
           </div>
         </div>
       </div>
