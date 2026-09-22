@@ -326,3 +326,20 @@ export interface AdminStory {
   consent_note: string | null;
   created_at: string;
 }
+
+export interface Connection {
+  provider: string;
+  provider_account_id: string;
+  scopes: string[];
+  connected_at: string;
+  expires_at: string | null;
+  has_refresh_token: boolean;
+  can_send_mail: boolean;
+  blocked_reason: string | null;
+}
+
+export interface Connections {
+  connections: Connection[];
+  can_send_email_as_self: boolean;
+  sending_provider: string | null;
+}

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { serviceHealth } from "@/lib/ai-api";
+import { ConnectMailbox } from "@/components/connect-mailbox";
+import { ConnectionsPanel } from "@/components/connections-panel";
 import { PreferencesForm } from "../profile/forms";
 import { DangerZone } from "./danger-zone";
 import { Banner, Hairline, SectionLabel, Tag } from "@/components/ui";
@@ -9,7 +11,11 @@ export const metadata = { title: "Settings — GradPortal" };
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const [me, health] = await Promise.all([api.me(), serviceHealth()]);
+  const [me, health, connections] = await Promise.all([
+    api.me(),
+    serviceHealth(),
+    api.connections().catch(() => null),
+  ]);
 
   const services = [
     { key: "doc" as const, label: "Dossier indexing", health: health.doc },
@@ -35,24 +41,32 @@ export default async function SettingsPage() {
       <Hairline />
 
       <section className="my-16">
-        <h2 className="heading mb-2">Sending email</h2>
+        <h2 className="heading mb-2">Connected accounts</h2>
         <p className="prose-column mb-5 text-[15px] text-pewter">
           Enquiries to opportunity contacts go out from your own mailbox, so replies
           reach you directly.
         </p>
         {me.can_send_email_as_self ? (
-          <Banner>
-            Connected. Emails send from{" "}
-            <span className="text-ink">{me.email}</span> and appear in your Sent
-            folder.
-          </Banner>
+          <div className="mb-5">
+            <Banner>
+              Connected. Emails send from{" "}
+              <span className="text-ink">{me.email}</span> and appear in your Sent
+              folder.
+            </Banner>
+          </div>
         ) : (
-          <Banner tone="warning">
-            No mailbox connected. Sign out and sign back in with Google, accepting the
-            send permission, and enquiries will come from your own address instead of
-            being blocked.
-          </Banner>
+          <div className="mb-5">
+            <ConnectMailbox
+              email={me.email}
+              currentProvider={
+                connections?.connections.find((c) => c.provider !== "dev")?.provider ??
+                null
+              }
+            />
+          </div>
         )}
+
+        {connections ? <ConnectionsPanel connections={connections} /> : null}
       </section>
 
       <Hairline />

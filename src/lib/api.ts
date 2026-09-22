@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import type {
   AdminStory,
+  Connections,
   Facets,
   Freshness,
   Me,
@@ -115,6 +116,8 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
 
 export const api = {
   me: () => apiFetch<Me>("/users/me"),
+
+  connections: () => apiFetch<Connections>("/auth/connections"),
 
   completeOnboarding: (body: unknown) =>
     apiFetch<Me>("/users/me/onboarding", { method: "POST", body }),
