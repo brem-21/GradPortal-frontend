@@ -19,6 +19,7 @@ import { RichText } from "./rich-text";
 import { SpeakButton } from "./speak-button";
 import { VoiceRecorder } from "./voice-recorder";
 import { useProgress } from "./progress-rail";
+import { WebResultsRail } from "./web-results-rail";
 import { Tag, cx } from "./ui";
 import { COUNSEL } from "@/lib/navigation";
 import { kindLabel } from "@/lib/document-kinds";
@@ -110,6 +111,10 @@ export function CounselProvider({
   const [input, setInput] = useState("");
   const [reasoning, setReasoning] = useState(false);
   const [web, setWeb] = useState(false);
+  // On by default: answering from the reader's own dossier is the point of
+  // the feature, so making them opt in each time would tax the common case.
+  const [useDocuments, setUseDocuments] = useState(true);
+  const [liveWeb, setLiveWeb] = useState<StreamWebSource[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [openReasoning, setOpenReasoning] = useState<string | null>(null);
@@ -252,7 +257,8 @@ export function CounselProvider({
       setError(null);
       setInput("");
       setBusy(true);
-      setStage(web ? "searching_web" : "retrieving");
+      setStage(web ? "searching_web" : useDocuments ? "retrieving" : "answering");
+      setLiveWeb([]);
 
       const turnId = `a-${Date.now()}`;
       setTurns((current) => [
@@ -275,6 +281,7 @@ export function CounselProvider({
           reasoning,
           voice: viaVoice,
           web,
+          use_documents: useDocuments,
           input_mode: viaVoice ? "voice" : "text",
           opportunity_id: context?.id ?? null,
           opportunity: context ? { ...context } : null,
@@ -304,7 +311,10 @@ export function CounselProvider({
                   : turn,
               ),
             ),
-          onWeb: (items) => patch({ webSources: items, usedWeb: true }),
+          onWeb: (items) => {
+            setLiveWeb(items);
+            patch({ webSources: items, usedWeb: true });
+          },
           onDone: (info) => {
             patch({
               streaming: false,
@@ -328,7 +338,7 @@ export function CounselProvider({
         },
       );
     },
-    [busy, conversationId, context, reasoning, web, progress, refreshHistory],
+    [busy, conversationId, context, reasoning, web, useDocuments, progress, refreshHistory],
   );
 
   const prompts = context ? OPPORTUNITY_PROMPTS : GENERAL_PROMPTS;
@@ -369,6 +379,11 @@ export function CounselProvider({
             aria-label="Close Counsel"
             onClick={close}
             className="animate-scrim-in fixed inset-0 z-[110] cursor-default bg-midnight/25"
+          />
+
+          <WebResultsRail
+            sources={liveWeb}
+            searching={busy && web && liveWeb.length === 0}
           />
 
           <aside
@@ -645,6 +660,31 @@ export function CounselProvider({
               <div className="mb-3 flex flex-wrap items-center gap-4">
                 <button
                   type="button"
+                  onClick={() => setUseDocuments((value) => !value)}
+                  aria-pressed={useDocuments}
+                  title={
+                    useDocuments
+                      ? "Answers are grounded in your dossier"
+                      : "Answering from general knowledge only"
+                  }
+                  className={cx(
+                    "inline-flex items-center gap-1.5 rounded-pill px-3 py-1.5 text-[11px] font-medium transition-colors",
+                    useDocuments
+                      ? "bg-char text-paper"
+                      : "text-pewter ring-1 ring-inset ring-mist hover:ring-smoke",
+                  )}
+                >
+                  <span
+                    className={cx(
+                      "h-2 w-2 rounded-pill ring-1",
+                      useDocuments ? "bg-ember ring-ember" : "bg-transparent ring-smoke",
+                    )}
+                    aria-hidden="true"
+                  />
+                  Use my dossier
+                </button>
+                <button
+                  type="button"
                   onClick={() => setWeb((value) => !value)}
                   aria-pressed={web}
                   className={cx(
@@ -727,12 +767,13 @@ export function CounselProvider({
                   </button>
                 )}
               </form>
-              {web ? (
-                <p className="mt-2 text-[10px] leading-relaxed text-smoke">
-                  Web search costs noticeably more per question than reading your own
-                  documents. It stays off until you turn it on.
-                </p>
-              ) : null}
+              <p className="mt-2 text-[10px] leading-relaxed text-smoke">
+                {!useDocuments
+                  ? "Your dossier is off, so answers come from general knowledge and cannot reference your own documents."
+                  : web
+                    ? "Web search costs noticeably more per question than reading your own documents."
+                    : "Answers are drawn from your dossier and cite it."}
+              </p>
             </div>
           </aside>
         </>
