@@ -119,7 +119,8 @@ export async function serviceHealth(): Promise<Record<ServiceName, ServiceHealth
 }
 
 export const ai = {
-  documents: () => serviceFetch<DocumentList>("doc", "/dossier"),
+  // doc-service path, not the /dossier page route — these are different things.
+  documents: () => serviceFetch<DocumentList>("doc", "/documents"),
   documentStats: () => serviceFetch<DocumentStats>("doc", "/documents/stats"),
   deleteDocument: (id: string) =>
     serviceFetch<void>("doc", `/documents/${id}`, { method: "DELETE" }),

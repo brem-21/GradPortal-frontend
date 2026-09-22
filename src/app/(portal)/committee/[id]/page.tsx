@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ai } from "@/lib/ai-api";
 import { ApiError } from "@/lib/api";
+import { RichText } from "@/components/rich-text";
 import { ScoreMeter } from "@/components/score-meter";
 import { Banner, Hairline, SectionLabel, Tag, TextArrowLink, cx } from "@/components/ui";
 import { formatDate } from "@/lib/format";
@@ -53,9 +54,9 @@ function FindingCard({ finding }: { finding: Finding }) {
 
       <p className="text-[18px] leading-snug text-ink">{finding.title}</p>
       {finding.detail ? (
-        <p className="prose-column mt-2 text-[15px] leading-[1.5] text-pewter">
+        <RichText compact className="prose-column mt-2 text-pewter">
           {finding.detail}
-        </p>
+        </RichText>
       ) : null}
 
       {finding.evidence ? (
@@ -65,10 +66,12 @@ function FindingCard({ finding }: { finding: Finding }) {
       ) : null}
 
       {finding.suggestion ? (
-        <p className="prose-column mt-3 text-[13px] leading-relaxed text-ink">
-          <span className="text-smoke">Do this: </span>
-          {finding.suggestion}
-        </p>
+        <div className="prose-column mt-3 rounded-card bg-mist px-3.5 py-2.5">
+          <span className="section-label">Do this</span>
+          <RichText compact className="mt-0.5 text-[13px]">
+            {finding.suggestion}
+          </RichText>
+        </div>
       ) : null}
     </li>
   );
@@ -140,18 +143,16 @@ export default async function EvaluationDetailPage({
 
       {run.summary ? (
         <section className="mb-10">
-          <p className="prose-column font-serif text-[18px] leading-[1.5] text-ink">
+          <RichText className="prose-column font-serif text-[18px] leading-[1.5]">
             {run.summary}
-          </p>
+          </RichText>
         </section>
       ) : null}
 
       {run.committee_note ? (
         <section className="mb-10 rounded-card bg-mist p-6">
           <SectionLabel>What would actually be said in the room</SectionLabel>
-          <p className="prose-column text-[15px] leading-[1.5] text-ink">
-            {run.committee_note}
-          </p>
+          <RichText className="prose-column text-[15px]">{run.committee_note}</RichText>
         </section>
       ) : null}
 
@@ -230,9 +231,9 @@ export default async function EvaluationDetailPage({
                 </div>
 
                 {assessment.summary ? (
-                  <p className="prose-column mb-6 text-[15px] leading-[1.5] text-pewter">
+                  <RichText className="prose-column mb-6 text-pewter">
                     {assessment.summary}
-                  </p>
+                  </RichText>
                 ) : null}
 
                 <ul className="space-y-1">

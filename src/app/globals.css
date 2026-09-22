@@ -282,3 +282,22 @@ body {
 .surface-pine { background-color: var(--color-pine); }
 .surface-tide { background-color: var(--color-tide); }
 .surface-cedar { background-color: var(--color-cedar); }
+
+/* A cited source briefly lifts when its marker is clicked, so the eye can
+   follow the jump. Background only — the system has no glow or shadow. */
+@keyframes source-flash {
+  0%   { background-color: rgb(183 89 40 / 0.14); }
+  100% { background-color: transparent; }
+}
+
+.source-flash {
+  animation: source-flash 1.4s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .source-flash {
+    animation: none !important;
+    outline: 2px solid var(--color-ember);
+    outline-offset: 2px;
+  }
+}
