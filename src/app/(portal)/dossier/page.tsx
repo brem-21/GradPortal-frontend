@@ -1,10 +1,9 @@
 import { ai, serviceHealth } from "@/lib/ai-api";
 import { ApiError } from "@/lib/api";
-import { DocumentRow } from "./document-row";
+import { DossierBoard } from "./dossier-board";
 import { UploadButton } from "@/components/upload-dialog";
-import { Banner, EmptyState, Hairline, PillLink, SectionLabel, StatTile } from "@/components/ui";
-import { kindLabel } from "@/lib/document-kinds";
-import type { DocumentList, DocumentStats } from "@/types/ai";
+import { Banner, SectionLabel } from "@/components/ui";
+import type { AppDocument } from "@/types/ai";
 
 export const metadata = { title: "Dossier — GradPortal" };
 export const dynamic = "force-dynamic";
@@ -15,15 +14,14 @@ export default async function DossierPage() {
   const driveConfigured = Boolean(
     process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && process.env.NEXT_PUBLIC_GOOGLE_API_KEY,
   );
+
   const health = await serviceHealth();
   const docHealth = health.doc;
 
-  let documents: DocumentList = { items: [], total: 0 };
-  let stats: DocumentStats | null = null;
+  let documents: AppDocument[] = [];
   let loadError: string | null = null;
-
   try {
-    [documents, stats] = await Promise.all([ai.documents(), ai.documentStats()]);
+    documents = (await ai.documents()).items;
   } catch (error) {
     loadError = error instanceof ApiError ? error.message : "Could not load your documents.";
   }
@@ -31,86 +29,47 @@ export default async function DossierPage() {
   const embeddingsMissing = docHealth?.checks?.embeddings?.startsWith("missing");
 
   return (
-    <div className="py-12">
-      <SectionLabel>Your application file</SectionLabel>
-      <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
-        <div>
-          <h1 className="heading-lg mb-3">Dossier</h1>
-          <p className="prose-column text-[15px] text-pewter">
-            Your CV, statement of purpose, motivation letter, recommendations and
-            transcripts. Counsel answers from these, and this is what the Committee
-            reads.
+    <div className="py-10">
+      {/* Title, purpose and the primary action on one line: the list should
+          start near the top of the viewport, not below a block of prose. */}
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-5">
+        <div className="min-w-0">
+          <SectionLabel>Your application file</SectionLabel>
+          <h1 className="text-[36px] font-light leading-[1.1] tracking-[-0.72px]">
+            Dossier
+          </h1>
+          <p className="prose-column mt-1.5 text-[13px] leading-relaxed text-pewter">
+            Counsel answers from these, and this is what the Committee reads.
+            Select any document to read it.
           </p>
         </div>
         <UploadButton driveConfigured={driveConfigured} />
       </div>
 
       {docHealth === null ? (
-        <div className="mb-8">
+        <div className="mb-6">
           <Banner tone="error">
             The document service is not running. Start it with{" "}
-            <code className="text-[12px]">
-              uvicorn doc_service.main:app --port 8001
-            </code>{" "}
-            from the services directory.
+            <code className="text-[12px]">./run-all.sh</code> in the backend repo.
           </Banner>
         </div>
       ) : embeddingsMissing ? (
-        <div className="mb-8">
+        <div className="mb-6">
           <Banner tone="warning">
-            <strong>OPENAI_API_KEY is not set.</strong> Uploads will parse but cannot be
-            indexed, so Counsel will not be able to search them. OpenRouter has no
-            embeddings endpoint, which is why this key is separate. Add it to{" "}
+            <strong>No embeddings key is set.</strong> Uploads will parse but cannot be
+            indexed. Set <code className="text-[12px]">OPENROUTER_API_KEY</code> in{" "}
             <code className="text-[12px]">services/.env</code> and restart doc-service.
           </Banner>
         </div>
       ) : null}
 
       {loadError ? (
-        <div className="mb-8">
+        <div className="mb-6">
           <Banner tone="error">{loadError}</Banner>
         </div>
       ) : null}
 
-      {stats && stats.total_documents > 0 ? (
-        <div className="mb-12 grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <StatTile label="Documents" value={stats.total_documents} />
-          <StatTile
-            label="Words indexed"
-            value={stats.total_words.toLocaleString()}
-            hint="Searchable by Counsel"
-          />
-          <StatTile
-            label="Types covered"
-            value={Object.keys(stats.by_kind).length}
-            hint={Object.keys(stats.by_kind).map(kindLabel).join(", ")}
-          />
-          <StatTile
-            label="Ready to review"
-            value={documents.items.filter((d) => d.status === "indexed").length}
-          />
-        </div>
-      ) : null}
-
-      <section>
-        <SectionLabel>Uploaded</SectionLabel>
-        <h2 className="heading mb-6">Your documents</h2>
-
-        {documents.items.length === 0 ? (
-          <EmptyState
-            title="Nothing uploaded yet"
-            body="Start with your CV and your statement of purpose — those two carry most of the weight in a committee's reading."
-            action={<UploadButton driveConfigured={driveConfigured} />}
-          />
-        ) : (
-          <ul>
-            {documents.items.map((document) => (
-              <DocumentRow key={document.id} document={document} />
-            ))}
-            <Hairline />
-          </ul>
-        )}
-      </section>
+      <DossierBoard documents={documents} driveConfigured={driveConfigured} />
     </div>
   );
 }
