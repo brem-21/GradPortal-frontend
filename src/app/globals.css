@@ -1,0 +1,268 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Aker — darkroom gallery wall
+   Monumental type over muted photography; exhibit-label restraint.
+   See DESIGN.md. Theme is light; there is no dark variant by design.
+   ============================================================ */
+
+@theme {
+  /* --- Colors --- */
+  --color-ink: #000000;
+  --color-paper: #ffffff;
+  --color-char: #1c1c1c;
+  --color-midnight: #070707;
+  --color-iron: #262626;
+  --color-slate: #38464a;
+  --color-mist: #e5e4e4;
+  --color-smoke: #8d8d8d;
+  --color-pewter: #666666;
+  --color-ember: #b75928;
+  --color-pine: #193f32;
+  --color-tide: #002934;
+  --color-driftwood: #537179;
+  --color-cedar: #776157;
+  --color-coral: #df6a6b;
+  --color-action: #494949;
+
+  /* --- Typography --- */
+  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+  --font-serif: var(--font-lora), Georgia, "Times New Roman", serif;
+
+  --text-body: 15px;
+  --text-body--line-height: 1.5;
+  --text-body--letter-spacing: 0.15px;
+
+  --text-subheading: 18px;
+  --text-subheading--line-height: 1.5;
+  --text-subheading--letter-spacing: 0.18px;
+
+  --text-heading-sm: 22px;
+  --text-heading-sm--line-height: 1.25;
+  --text-heading-sm--letter-spacing: -0.44px;
+
+  --text-heading: 36px;
+  --text-heading--line-height: 1.2;
+  --text-heading--letter-spacing: -0.72px;
+
+  --text-heading-lg: 62px;
+  --text-heading-lg--line-height: 1.1;
+  --text-heading-lg--letter-spacing: -1.55px;
+
+  --text-display: 168px;
+  --text-display--line-height: 0.8;
+  --text-display--letter-spacing: -4.2px;
+
+  --text-micro: 12px;
+  --text-micro--line-height: 1.4;
+  --text-micro--letter-spacing: 0.12px;
+
+  /* --- Spacing --- */
+  --spacing-13: 13px;
+  --spacing-19: 19px;
+  --spacing-22: 22px;
+
+  /* --- Radius --- */
+  --radius-small: 3.2px;
+  --radius-card: 8px;
+  --radius-image: 8px;
+  --radius-button: 80px;
+  --radius-pill: 1584px;
+
+  /* --- Layout --- */
+  --container-page: 1200px;
+}
+
+:root {
+  --page-gutter: 24px;
+  --section-gap: 80px;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: 1.5;
+  letter-spacing: 0.15px;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Depth comes from photography and surface contrast, never box-shadow. */
+* {
+  box-shadow: none;
+}
+
+::selection {
+  background: var(--color-ember);
+  color: var(--color-paper);
+}
+
+/* Focus is visible but stays inside the monochrome vocabulary. */
+:focus-visible {
+  outline: 2px solid var(--color-ember);
+  outline-offset: 3px;
+}
+
+@layer utilities {
+  /* Page shell: 1200px centred with a 16px minimum side gutter on phones. */
+  .page-shell {
+    width: 100%;
+    max-width: var(--container-page);
+    margin-inline: auto;
+    padding-inline: 16px;
+  }
+  @media (min-width: 768px) {
+    .page-shell {
+      padding-inline: var(--page-gutter);
+    }
+  }
+
+  /* Editorial column — body copy is never centred and never wider than this. */
+  .prose-column {
+    max-width: 600px;
+  }
+
+  /* The wordmark: weight 300 even when shouting. Scales down on small screens
+     rather than overflowing, keeping the negative tracking proportional. */
+  .wordmark {
+    font-weight: 300;
+    font-size: clamp(64px, 14vw, 168px);
+    line-height: 0.8;
+    letter-spacing: -0.025em;
+  }
+
+  .heading-lg {
+    font-weight: 300;
+    font-size: clamp(36px, 6vw, 62px);
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+  }
+
+  .heading {
+    font-weight: 300;
+    font-size: clamp(28px, 4vw, 36px);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  /* Overline label that precedes a section heading. */
+  .section-label {
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0.12px;
+    color: var(--color-smoke);
+  }
+
+  .hairline {
+    border-top: 1px solid var(--color-mist);
+  }
+
+  /* Full-bleed band that escapes the page shell. */
+  .full-bleed {
+    width: 100vw;
+    margin-left: 50%;
+    transform: translateX(-50%);
+  }
+}
+
+/* ============================================================
+   Motion
+   Photography carries the page, so the only motion is the media
+   itself, a slow crossfade between slides, and the overlay that
+   lifts the sign-in panel off the page. Nothing bounces.
+   ============================================================ */
+
+/* Slow drift across a still or a clip, so a held slide never looks frozen.
+   Scale starts above 1 so the pan never exposes an edge. */
+@keyframes kenburns {
+  0% {
+    transform: scale(1.06) translate3d(0, 0, 0);
+  }
+  100% {
+    transform: scale(1.14) translate3d(-1.2%, -1.6%, 0);
+  }
+}
+
+.animate-kenburns {
+  animation: kenburns 22s ease-out forwards;
+  will-change: transform;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scrim-in {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(20px);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-fade-in {
+  animation: fade-in 700ms ease-out both;
+}
+
+.animate-scrim-in {
+  animation: scrim-in 320ms ease-out both;
+}
+
+/* Stagger helpers for the hero. Small, deliberate, never more than a second. */
+.delay-1 { animation-delay: 120ms; }
+.delay-2 { animation-delay: 260ms; }
+.delay-3 { animation-delay: 420ms; }
+.delay-4 { animation-delay: 580ms; }
+
+/* Motion is decoration here; none of it carries meaning, so removing it
+   costs the visitor nothing. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-kenburns,
+  .animate-fade-up,
+  .animate-fade-in,
+  .animate-scrim-in {
+    animation: none !important;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Flat dark surfaces for cards that carry no media. */
+.surface-midnight { background-color: var(--color-midnight); }
+.surface-pine { background-color: var(--color-pine); }
+.surface-tide { background-color: var(--color-tide); }
+.surface-cedar { background-color: var(--color-cedar); }
