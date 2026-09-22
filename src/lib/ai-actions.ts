@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { ActionState } from "@/lib/action-state";
 import { ai, serviceFetch } from "@/lib/ai-api";
 import { ApiError } from "@/lib/api";
+import type { EvaluationDetail } from "@/types/ai";
 
 function fail(error: unknown): ActionState {
   if (error instanceof ApiError) return { ok: false, message: error.message };
@@ -219,5 +220,23 @@ export async function refineEmailAction(input: {
     };
   } catch (error) {
     return fail(error);
+  }
+}
+
+/**
+ * One review with its per-criterion assessments.
+ *
+ * The history table expands rows in place, and the list endpoint returns runs
+ * without their assessments, so the detail is pulled on expand rather than
+ * loading every review's findings with the page.
+ */
+export async function fetchEvaluationAction(
+  id: string,
+): Promise<EvaluationDetail | null> {
+  try {
+    return await ai.evaluation(id);
+  } catch (error) {
+    console.error("[ai-action] evaluation", error);
+    return null;
   }
 }

@@ -6,6 +6,7 @@ import type {
   DocumentList,
   DocumentStats,
   EvaluationDetail,
+  EvaluationRun,
   Rubric,
   ServiceHealth,
 } from "@/types/ai";
@@ -139,8 +140,10 @@ export const ai = {
       query: { track },
       revalidate: 3600,
     }),
+  // The list endpoint returns runs without their per-criterion assessments;
+  // those come from `evaluation(id)`.
   evaluations: () =>
-    serviceFetch<{ items: EvaluationDetail[]; total: number }>("evaluation", "/evaluations"),
+    serviceFetch<{ items: EvaluationRun[]; total: number }>("evaluation", "/evaluations"),
   evaluation: (id: string) =>
     serviceFetch<EvaluationDetail>("evaluation", `/evaluations/${id}`),
   startEvaluation: (body: unknown) =>
