@@ -21,7 +21,7 @@ export default async function SettingsPage() {
     { key: "doc" as const, label: "Dossier indexing", health: health.doc },
     { key: "rag" as const, label: "Counsel", health: health.rag },
     { key: "evaluation" as const, label: "The Committee", health: health.evaluation },
-    { key: "voice" as const, label: "Voice", health: health.voice },
+    { key: "voice" as const, label: "Speech input", health: health.voice },
   ];
 
   return (

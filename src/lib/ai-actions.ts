@@ -117,9 +117,9 @@ export async function sendChatAction(input: {
   message: string;
   conversationId?: string | null;
   reasoning: boolean;
-  voice: boolean;
   web?: boolean;
   useDocuments?: boolean;
+  inputMode?: "text" | "voice";
   opportunity?: Record<string, unknown>;
 }): Promise<ChatActionResult> {
   const message = input.message.trim();
@@ -130,10 +130,9 @@ export async function sendChatAction(input: {
       message,
       conversation_id: input.conversationId ?? null,
       reasoning: input.reasoning,
-      voice: input.voice,
       web: input.web ?? false,
       use_documents: input.useDocuments ?? true,
-      input_mode: input.voice ? "voice" : "text",
+      input_mode: input.inputMode ?? "text",
       opportunity_id: (input.opportunity?.id as string | undefined) ?? null,
       opportunity: input.opportunity ?? null,
     });

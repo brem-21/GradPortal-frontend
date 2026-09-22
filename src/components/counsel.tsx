@@ -16,7 +16,6 @@ import {
 } from "@/lib/counsel-stream";
 import { NavIcon } from "./nav-icon";
 import { RichText } from "./rich-text";
-import { SpeakButton } from "./speak-button";
 import { VoiceRecorder } from "./voice-recorder";
 import { useProgress } from "./progress-rail";
 import { WebResultsRail } from "./web-results-rail";
@@ -279,7 +278,6 @@ export function CounselProvider({
           message,
           conversation_id: conversationId,
           reasoning,
-          voice: viaVoice,
           web,
           use_documents: useDocuments,
           input_mode: viaVoice ? "voice" : "text",
@@ -565,7 +563,6 @@ export function CounselProvider({
                       ) : null}
 
                       <div className="mt-2.5 flex flex-wrap items-center gap-3">
-                        <SpeakButton text={turn.content} />
                         {turn.latencyMs ? (
                           <span className="text-[11px] text-smoke">
                             {(turn.latencyMs / 1000).toFixed(1)}s
