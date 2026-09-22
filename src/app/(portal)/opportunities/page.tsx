@@ -2,6 +2,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { Filters } from "./filters";
 import { OpportunityCard } from "@/components/opportunity-card";
+import { OpportunityTable } from "@/components/opportunity-table";
 import { RefreshButton } from "@/components/refresh-button";
 import { EmptyState, Hairline, PillLink, SectionLabel, cx } from "@/components/ui";
 
@@ -95,7 +96,10 @@ export default async function OpportunitiesPage({
         />
       ) : (
         <>
-          <div>
+          <OpportunityTable items={results.items} />
+
+          {/* Cards carry the same openings where a table will not fit. */}
+          <div className="md:hidden">
             {results.items.map((opportunity) => (
               <OpportunityCard key={opportunity.id} opportunity={opportunity} />
             ))}

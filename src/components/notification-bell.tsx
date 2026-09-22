@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
 import { markAllReadAction, markReadAction } from "@/lib/actions";
 import { NavIcon } from "./nav-icon";
 import { cx } from "./ui";
@@ -10,6 +10,9 @@ import { formatRelative, titleCase } from "@/lib/format";
 import type { Notification } from "@/types/api";
 
 const URGENT = new Set(["deadline_reminder", "outreach_failed"]);
+
+const PANEL_WIDTH = 340;
+const VIEWPORT_MARGIN = 12;
 
 /**
  * Bell with an unread dot, opening a panel of recent notifications.
@@ -25,6 +28,36 @@ export function NotificationBell({ unread }: { unread: number }) {
   const [loading, setLoading] = useState(false);
   const [pending, startTransition] = useTransition();
   const panelRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  // The bell renders in the sidebar (236px wide, 68px collapsed) and in the
+  // mobile header, so a panel positioned relative to it would spill out of its
+  // container or off-screen. It is placed against the viewport instead.
+  const [anchor, setAnchor] = useState<{ top: number; left: number } | null>(null);
+
+  const place = useCallback(() => {
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const maxLeft = window.innerWidth - PANEL_WIDTH - VIEWPORT_MARGIN;
+    // Prefer hanging off the bell's left edge; fall back to its right edge when
+    // the bell sits in a narrow left rail and there is no room that way.
+    const preferred = rect.right - PANEL_WIDTH;
+    const left = preferred < VIEWPORT_MARGIN ? rect.left : preferred;
+    setAnchor({
+      top: rect.bottom + 8,
+      left: Math.max(VIEWPORT_MARGIN, Math.min(left, maxLeft)),
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    place();
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, true);
+    return () => {
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+    };
+  }, [open, place]);
 
   useEffect(() => {
     if (!open || items !== null) return;
@@ -62,6 +95,7 @@ export function NotificationBell({ unread }: { unread: number }) {
   return (
     <div ref={panelRef} className="relative">
       <button
+        ref={buttonRef}
         type="button"
         onClick={openAndRefresh}
         aria-expanded={open}
@@ -88,9 +122,11 @@ export function NotificationBell({ unread }: { unread: number }) {
         ) : null}
       </button>
 
-      {open ? (
-        <div className="animate-fade-up absolute right-0 top-full z-50 mt-2 w-[340px] overflow-hidden rounded-card border border-mist bg-paper">
-          <div className="flex items-center justify-between border-b border-mist px-4 py-3">
+      {open && anchor ? (
+        <div
+          style={{ top: anchor.top, left: anchor.left, width: PANEL_WIDTH }}
+          className="animate-fade-up fixed z-[130] flex max-h-[min(70vh,520px)] flex-col overflow-hidden rounded-card border border-mist bg-paper">
+          <div className="flex shrink-0 items-center justify-between border-b border-mist px-4 py-3">
             <span className="text-[13px] text-ink">
               Notifications
               {unread > 0 ? <span className="text-smoke"> · {unread} new</span> : null}
@@ -113,7 +149,7 @@ export function NotificationBell({ unread }: { unread: number }) {
             ) : null}
           </div>
 
-          <div className="max-h-[380px] overflow-y-auto">
+          <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-width:thin]">
             {loading ? (
               <p className="px-4 py-8 text-center text-[13px] text-smoke">Loading…</p>
             ) : !items || items.length === 0 ? (
@@ -190,7 +226,7 @@ export function NotificationBell({ unread }: { unread: number }) {
           <Link
             href="/notifications"
             onClick={() => setOpen(false)}
-            className="block border-t border-mist px-4 py-3 text-center text-[12px] text-pewter transition-colors hover:text-ink"
+            className="block shrink-0 border-t border-mist px-4 py-3 text-center text-[12px] text-pewter transition-colors hover:text-ink"
           >
             See all notifications →
           </Link>

@@ -1,29 +1,18 @@
-import Link from "next/link";
 import { ai, serviceHealth } from "@/lib/ai-api";
 import { ApiError } from "@/lib/api";
 import { EvaluationForm } from "./evaluation-form";
-import { ScoreMeter } from "@/components/score-meter";
+import { ReviewTable } from "./review-table";
 import {
   Banner,
   EmptyState,
-  Hairline,
   PillLink,
   SectionLabel,
-  Tag,
   TextArrowLink,
 } from "@/components/ui";
-import { formatRelative } from "@/lib/format";
 import type { AppDocument, EvaluationRun } from "@/types/ai";
 
 export const metadata = { title: "The Committee — GradPortal" };
 export const dynamic = "force-dynamic";
-
-const VERDICT_TONE: Record<string, "ember" | "outline"> = {
-  competitive: "outline",
-  borderline: "outline",
-  "needs work": "ember",
-  "not ready": "ember",
-};
 
 export default async function EvaluatePage() {
   const health = await serviceHealth();
@@ -47,16 +36,16 @@ export default async function EvaluatePage() {
   const openrouterMissing = evalHealth?.checks?.openrouter?.startsWith("missing");
 
   return (
-    <div className="py-12">
+    <div className="py-10">
       <SectionLabel>Admissions review</SectionLabel>
-      <h1 className="heading-lg mb-4">The Committee</h1>
-      <p className="prose-column mb-10 text-[15px] text-pewter">
-        Your documents are read the way a graduate admissions committee reads them —
-        against the rubric for the degree you are applying to, criterion by criterion,
-        then as a whole file. The same CV scores very differently for a master&rsquo;s
-        and a PhD, because the two committees are asking different questions. The
-        feedback is specific and it is not flattering.
-      </p>
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-x-10 gap-y-2">
+        <h1 className="heading-lg">The Committee</h1>
+        <p className="max-w-[440px] text-[13px] leading-relaxed text-pewter">
+          Your file is read against the rubric for the degree you are applying to,
+          criterion by criterion. The same CV scores very differently for a
+          master&rsquo;s and a PhD. The feedback is not flattering.
+        </p>
+      </div>
 
       {evalHealth === null ? (
         <div className="mb-8">
@@ -93,8 +82,8 @@ export default async function EvaluatePage() {
       )}
 
       {runs.length > 0 ? (
-        <section className="mt-20">
-          <div className="mb-6 flex items-end justify-between gap-6">
+        <section className="mt-12 border-t border-ink/15 pt-10">
+          <div className="mb-5 flex items-end justify-between gap-6">
             <div>
               <SectionLabel>History</SectionLabel>
               <h2 className="heading">Past reviews</h2>
@@ -102,46 +91,7 @@ export default async function EvaluatePage() {
             <TextArrowLink href="/dossier">Manage your dossier</TextArrowLink>
           </div>
 
-          <ul>
-            {runs.map((run) => (
-              <li key={run.id} className="hairline py-6 first:border-t-0 first:pt-0">
-                <Link href={`/committee/${run.id}`} className="group block">
-                  <div className="flex flex-wrap items-start justify-between gap-5">
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-2 flex flex-wrap items-center gap-2">
-                        <Tag tone="outline">
-                          {run.track === "phd" ? "PhD" : "Master's"}
-                        </Tag>
-                        {run.verdict ? (
-                          <Tag tone={VERDICT_TONE[run.verdict] ?? "outline"}>
-                            {run.verdict}
-                          </Tag>
-                        ) : null}
-                        <span className="text-[12px] text-smoke">
-                          {formatRelative(run.created_at)}
-                        </span>
-                      </div>
-                      <p className="prose-column line-clamp-2 text-[15px] leading-relaxed text-ink transition-colors group-hover:text-ember">
-                        {run.summary ?? run.error ?? "No summary."}
-                      </p>
-                    </div>
-                    {run.overall_score !== null ? (
-                      <div className="w-[150px] shrink-0">
-                        <p className="text-right text-[36px] font-light leading-none tracking-[-0.72px] text-ink">
-                          {Math.round(run.overall_score)}
-                          <span className="text-[14px] text-smoke">/100</span>
-                        </p>
-                        <div className="mt-3">
-                          <ScoreMeter value={run.overall_score} />
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                </Link>
-              </li>
-            ))}
-            <Hairline />
-          </ul>
+          <ReviewTable runs={runs} />
         </section>
       ) : null}
     </div>
