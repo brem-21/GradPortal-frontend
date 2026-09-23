@@ -1,10 +1,12 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
+import { FindingsTable } from "@/components/findings-table";
 import { ScoreMeter } from "@/components/score-meter";
 import { Tag, TextArrowLink, cx } from "@/components/ui";
+import { fetchEvaluationAction } from "@/lib/ai-actions";
 import { formatRelative } from "@/lib/format";
-import type { EvaluationRun } from "@/types/ai";
+import type { EvaluationDetail, EvaluationRun } from "@/types/ai";
 
 const VERDICT_TONE: Record<string, "ember" | "outline"> = {
   competitive: "outline",
@@ -119,54 +121,7 @@ export function ReviewTable({ runs }: { runs: EvaluationRun[] }) {
               {isOpen ? (
                 <tr className="border-b border-mist bg-mist/30">
                   <td id={`review-${run.id}`} colSpan={5} className="px-2 pb-6 pt-0">
-                    <div className="animate-fade-up space-y-5 pl-5">
-                      {run.committee_note ? (
-                        <p className="prose-column text-[14px] leading-relaxed text-pewter">
-                          {run.committee_note}
-                        </p>
-                      ) : null}
-
-                      {run.priority_actions.length > 0 ? (
-                        <div>
-                          <p className="section-label mb-2">Do these first</p>
-                          <ol className="prose-column space-y-1.5">
-                            {run.priority_actions.map((action, index) => (
-                              <li
-                                key={action}
-                                className="flex gap-2.5 text-[14px] leading-relaxed text-ink"
-                              >
-                                <span className="shrink-0 text-smoke">{index + 1}.</span>
-                                {action}
-                              </li>
-                            ))}
-                          </ol>
-                        </div>
-                      ) : null}
-
-                      {run.missing_documents.length > 0 ? (
-                        <div>
-                          <p className="section-label mb-2">Still missing</p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {run.missing_documents.map((document) => (
-                              <Tag key={document} tone="ember">
-                                {document}
-                              </Tag>
-                            ))}
-                          </div>
-                        </div>
-                      ) : null}
-
-                      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 sm:hidden">
-                        <span className="text-[12px] text-smoke">
-                          {run.track === "phd" ? "PhD" : "Master's"} ·{" "}
-                          {formatRelative(run.created_at)}
-                        </span>
-                      </div>
-
-                      <TextArrowLink href={`/committee/${run.id}`}>
-                        Read the full review
-                      </TextArrowLink>
-                    </div>
+                    <ExpandedReview run={run} />
                   </td>
                 </tr>
               ) : null}
@@ -175,5 +130,87 @@ export function ReviewTable({ runs }: { runs: EvaluationRun[] }) {
         })}
       </tbody>
     </table>
+  );
+}
+
+
+/**
+ * The expanded row: every criterion the committee scored, grouped under the
+ * document it was scored against.
+ *
+ * Section header rows rather than separate tables, so the criterion and score
+ * columns stay aligned down the whole review — comparing a weak criterion in
+ * the CV against a strong one in the SOP is the reason to look at this at all.
+ */
+function ExpandedReview({ run }: { run: EvaluationRun }) {
+  const [detail, setDetail] = useState<EvaluationDetail | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchEvaluationAction(run.id).then((result) => {
+      if (cancelled) return;
+      if (result) setDetail(result);
+      else setFailed(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [run.id]);
+
+  return (
+    <div className="animate-fade-up space-y-5 pl-5">
+      {run.committee_note ? (
+        <p className="prose-column text-[14px] leading-relaxed text-pewter">
+          {run.committee_note}
+        </p>
+      ) : null}
+
+      {run.priority_actions.length > 0 ? (
+        <div>
+          <p className="section-label mb-2">Do these first</p>
+          <ol className="prose-column space-y-1.5">
+            {run.priority_actions.map((action, index) => (
+              <li
+                key={action}
+                className="flex gap-2.5 text-[14px] leading-relaxed text-ink"
+              >
+                <span className="shrink-0 text-smoke">{index + 1}.</span>
+                {action}
+              </li>
+            ))}
+          </ol>
+        </div>
+      ) : null}
+
+      {run.missing_documents.length > 0 ? (
+        <div>
+          <p className="section-label mb-2">Still missing</p>
+          <div className="flex flex-wrap gap-1.5">
+            {run.missing_documents.map((document) => (
+              <Tag key={document} tone="ember">
+                {document}
+              </Tag>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {detail === null && !failed ? (
+        <p className="py-3 text-[13px] text-smoke">Loading the criteria…</p>
+      ) : failed ? (
+        <p className="py-3 text-[13px] text-smoke">
+          Could not load the criteria for this review.
+        </p>
+      ) : (
+        <div className="max-w-[900px]">
+          <FindingsTable assessments={detail?.assessments ?? []} />
+        </div>
+      )}
+
+      <TextArrowLink href={`/committee/${run.id}`}>
+        Read the full review
+      </TextArrowLink>
+    </div>
   );
 }

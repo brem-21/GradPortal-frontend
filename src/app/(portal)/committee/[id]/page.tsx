@@ -2,80 +2,16 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ai } from "@/lib/ai-api";
 import { ApiError } from "@/lib/api";
+import { FindingsTable } from "@/components/findings-table";
 import { RichText } from "@/components/rich-text";
 import { ScoreMeter } from "@/components/score-meter";
-import { Banner, Hairline, SectionLabel, Tag, TextArrowLink, cx } from "@/components/ui";
+import { Banner, SectionLabel, Tag, TextArrowLink } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { kindLabel } from "@/lib/document-kinds";
-import type { Finding, Severity } from "@/types/ai";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Committee review — GradPortal" };
-
-const SEVERITY_ORDER: Record<Severity, number> = {
-  critical: 0,
-  major: 1,
-  minor: 2,
-  strength: 3,
-};
-
-const SEVERITY_COPY: Record<Severity, { label: string; tone: string; border: string }> = {
-  critical: {
-    label: "Critical",
-    tone: "text-ember",
-    border: "border-l-2 border-l-ember pl-4",
-  },
-  major: { label: "Major", tone: "text-ember", border: "border-l-2 border-l-ember/50 pl-4" },
-  minor: { label: "Minor", tone: "text-pewter", border: "border-l-2 border-l-mist pl-4" },
-  strength: {
-    label: "Strength",
-    tone: "text-pewter",
-    border: "border-l-2 border-l-ink pl-4",
-  },
-};
-
-function FindingCard({ finding }: { finding: Finding }) {
-  const severity = SEVERITY_COPY[finding.severity] ?? SEVERITY_COPY.minor;
-  return (
-    <li className={cx("py-5", severity.border)}>
-      <div className="mb-1 flex flex-wrap items-baseline justify-between gap-3">
-        <span className="flex items-center gap-2">
-          <span className={cx("text-[11px] uppercase tracking-wide", severity.tone)}>
-            {severity.label}
-          </span>
-          <span className="text-[12px] text-smoke">{finding.criterion_label}</span>
-        </span>
-        <span className="text-[12px] text-pewter">
-          {finding.score.toFixed(1)}
-          <span className="text-smoke">/5 · weight {(finding.weight * 100).toFixed(0)}%</span>
-        </span>
-      </div>
-
-      <p className="text-[18px] leading-snug text-ink">{finding.title}</p>
-      {finding.detail ? (
-        <RichText compact className="prose-column mt-2 text-pewter">
-          {finding.detail}
-        </RichText>
-      ) : null}
-
-      {finding.evidence ? (
-        <blockquote className="prose-column mt-3 border-l border-mist pl-4 font-serif text-[15px] leading-[1.5] text-ink">
-          “{finding.evidence}”
-        </blockquote>
-      ) : null}
-
-      {finding.suggestion ? (
-        <div className="prose-column mt-3 rounded-card bg-mist px-3.5 py-2.5">
-          <span className="section-label">Do this</span>
-          <RichText compact className="mt-0.5 text-[13px]">
-            {finding.suggestion}
-          </RichText>
-        </div>
-      ) : null}
-    </li>
-  );
-}
 
 export default async function EvaluationDetailPage({
   params,
@@ -96,10 +32,10 @@ export default async function EvaluationDetailPage({
   const failed = run.assessments.filter((a) => a.status !== "completed");
 
   return (
-    <div className="py-12">
+    <div className="py-10">
       <Link
         href="/committee"
-        className="mb-8 inline-block text-[13px] text-smoke transition-colors hover:text-ink"
+        className="mb-6 inline-block text-[13px] text-smoke transition-colors hover:text-ink"
       >
         ← All reviews
       </Link>
@@ -109,7 +45,9 @@ export default async function EvaluationDetailPage({
         {formatDate(run.created_at)}
       </SectionLabel>
 
-      <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
+      {/* Verdict and score sit on one line. The old layout gave the number a
+          62px display treatment that pushed the review itself off-screen. */}
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-x-10 gap-y-4">
         <h1 className="heading-lg">
           {run.verdict
             ? run.verdict.charAt(0).toUpperCase() + run.verdict.slice(1)
@@ -117,19 +55,19 @@ export default async function EvaluationDetailPage({
         </h1>
         {run.overall_score !== null ? (
           <div className="w-[240px]">
-            <p className="text-right text-[62px] font-light leading-none tracking-[-1.55px] text-ink">
+            <p className="text-right text-[34px] font-light leading-none tracking-[-0.8px] text-ink">
               {Math.round(run.overall_score)}
-              <span className="text-[18px] text-smoke">/100</span>
+              <span className="text-[14px] text-smoke">/100</span>
             </p>
-            <div className="mt-3">
+            <div className="mt-2">
               <ScoreMeter value={run.overall_score} />
             </div>
             {/* The score rates the documents submitted; the verdict rates the
                 file as a whole. A strong CV in an incomplete file scores well
                 and is still not ready, which looks contradictory unless said. */}
-            <p className="mt-2 text-right text-[11px] leading-relaxed text-smoke">
-              Average quality of the documents you submitted. The verdict above
-              also weighs what is missing.
+            <p className="mt-1.5 text-right text-[11px] leading-relaxed text-smoke">
+              Average quality of what you submitted. The verdict also weighs
+              what is missing.
             </p>
           </div>
         ) : null}
@@ -141,134 +79,100 @@ export default async function EvaluationDetailPage({
         </div>
       ) : null}
 
-      {run.summary ? (
-        <section className="mb-10">
-          <RichText className="prose-column font-serif text-[18px] leading-[1.5]">
-            {run.summary}
-          </RichText>
-        </section>
-      ) : null}
+      {/* The narrative on the left, the to-do list on the right: they are read
+          together, and stacking them cost a screen of scrolling on its own. */}
+      <div className="mb-10 grid gap-x-12 gap-y-8 lg:grid-cols-[1.15fr_1fr]">
+        <div className="space-y-6">
+          {run.summary ? (
+            <RichText className="prose-column font-serif text-[16px] leading-[1.55]">
+              {run.summary}
+            </RichText>
+          ) : null}
 
-      {run.committee_note ? (
-        <section className="mb-10 rounded-card bg-mist p-6">
-          <SectionLabel>What would actually be said in the room</SectionLabel>
-          <RichText className="prose-column text-[15px]">{run.committee_note}</RichText>
-        </section>
-      ) : null}
-
-      {run.priority_actions.length > 0 ? (
-        <section className="mb-10">
-          <SectionLabel>Do these first</SectionLabel>
-          <h2 className="heading mb-5">Priority actions</h2>
-          <ol className="space-y-0">
-            {run.priority_actions.map((action, index) => (
-              <li
-                key={index}
-                className="hairline grid grid-cols-[42px_1fr] items-baseline gap-4 py-5"
-              >
-                <span className="text-[12px] text-smoke">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <span className="text-[18px] leading-snug text-ink">{action}</span>
-              </li>
-            ))}
-            <Hairline />
-          </ol>
-        </section>
-      ) : null}
-
-      {run.missing_documents.length > 0 ? (
-        <section className="mb-10">
-          <SectionLabel>Not submitted</SectionLabel>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            {run.missing_documents.map((kind) => (
-              <Tag key={kind} tone="ember">
-                {kindLabel(kind)}
-              </Tag>
-            ))}
-          </div>
-          <p className="prose-column mt-3 text-[13px] text-pewter">
-            A {run.track === "phd" ? "doctoral" : "master's"} committee expects these.
-            Their absence is itself read as a signal.
-          </p>
-        </section>
-      ) : null}
-
-      <Hairline />
-
-      <section className="mt-10">
-        <SectionLabel>Document by document</SectionLabel>
-        <h2 className="heading mb-8">The detailed read</h2>
-
-        <div className="space-y-14">
-          {completed.map((assessment) => {
-            const findings = [...assessment.findings].sort(
-              (a, b) =>
-                SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity] ||
-                b.weight - a.weight,
-            );
-            return (
-              <article key={assessment.id}>
-                <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="mb-1 flex flex-wrap items-center gap-2">
-                      <h3 className="text-[22px] font-light tracking-[-0.44px] text-ink">
-                        {assessment.document_title}
-                      </h3>
-                      <Tag tone="outline">{kindLabel(assessment.document_kind)}</Tag>
-                    </div>
-                    <p className="text-[12px] text-smoke">{assessment.rubric_label}</p>
-                  </div>
-                  <div className="w-[160px] shrink-0">
-                    <p className="text-right text-[28px] font-light leading-none tracking-[-0.6px] text-ink">
-                      {Math.round(assessment.score)}
-                      <span className="text-[13px] text-smoke">/100</span>
-                    </p>
-                    <div className="mt-2">
-                      <ScoreMeter value={assessment.score} />
-                    </div>
-                  </div>
-                </div>
-
-                {assessment.summary ? (
-                  <RichText className="prose-column mb-6 text-pewter">
-                    {assessment.summary}
-                  </RichText>
-                ) : null}
-
-                <ul className="space-y-1">
-                  {findings.map((finding) => (
-                    <FindingCard key={finding.id} finding={finding} />
-                  ))}
-                </ul>
-              </article>
-            );
-          })}
-
-          {failed.map((assessment) => (
-            <article key={assessment.id}>
-              <h3 className="mb-2 text-[22px] font-light tracking-[-0.44px] text-ink">
-                {assessment.document_title}
-              </h3>
-              <Banner tone="error">
-                {assessment.error ?? "This document could not be reviewed."}
-              </Banner>
-            </article>
-          ))}
+          {run.committee_note ? (
+            <section className="rounded-card bg-mist p-5">
+              <SectionLabel>What would be said in the room</SectionLabel>
+              <RichText className="prose-column mt-1 text-[14px]">
+                {run.committee_note}
+              </RichText>
+            </section>
+          ) : null}
         </div>
-      </section>
 
-      <div className="mt-14 flex flex-wrap items-center gap-6">
-        <TextArrowLink href="/committee">Run another review</TextArrowLink>
-        
+        <div className="space-y-6">
+          {run.priority_actions.length > 0 ? (
+            <section>
+              <SectionLabel>Do these first</SectionLabel>
+              <ol className="mt-2">
+                {run.priority_actions.map((action, index) => (
+                  <li
+                    key={action}
+                    className="grid grid-cols-[28px_1fr] items-baseline gap-3 border-b border-mist py-3 last:border-b-0"
+                  >
+                    <span className="text-[12px] text-smoke">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <span className="text-[14px] leading-snug text-ink">{action}</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          ) : null}
+
+          {run.missing_documents.length > 0 ? (
+            <section>
+              <SectionLabel>Not submitted</SectionLabel>
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                {run.missing_documents.map((kind) => (
+                  <Tag key={kind} tone="ember">
+                    {kindLabel(kind)}
+                  </Tag>
+                ))}
+              </div>
+              <p className="mt-2 text-[12px] leading-relaxed text-pewter">
+                A {run.track === "phd" ? "doctoral" : "master's"} committee expects
+                these. Their absence is itself read as a signal.
+              </p>
+            </section>
+          ) : null}
+        </div>
       </div>
 
-      {run.model ? (
-        <p className="mt-8 text-[12px] text-smoke">
-          Reviewed with {run.model}. This is an informed simulation of a committee
-          reading, not a decision — treat it as one experienced reader&rsquo;s opinion.
-        </p>
-      ) : null}
+      <section className="border-t border-ink/15 pt-8">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <SectionLabel>Document by document</SectionLabel>
+            <h2 className="heading">The detailed read</h2>
+          </div>
+          <p className="text-[12px] text-smoke">
+            Sorted by severity within each document.
+          </p>
+        </div>
+
+        <FindingsTable assessments={completed} showEvidence />
+
+        {failed.length > 0 ? (
+          <div className="mt-6 space-y-3">
+            {failed.map((assessment) => (
+              <Banner key={assessment.id} tone="error">
+                <strong>{assessment.document_title}:</strong>{" "}
+                {assessment.error ?? "This document could not be reviewed."}
+              </Banner>
+            ))}
+          </div>
+        ) : null}
+      </section>
+
+      <div className="mt-10 flex flex-wrap items-center justify-between gap-6">
+        <TextArrowLink href="/committee">Run another review</TextArrowLink>
+        {run.model ? (
+          <p className="max-w-[460px] text-[12px] leading-relaxed text-smoke">
+            Reviewed with {run.model}. This is an informed simulation of a committee
+            reading, not a decision — treat it as one experienced reader&rsquo;s
+            opinion.
+          </p>
+        ) : null}
+      </div>
     </div>
   );
 }
